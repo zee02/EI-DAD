@@ -1,39 +1,80 @@
 <template>
-  <div class="container mx-auto p-4">
+  <Toaster />
+  <nav class="max-w-full p-5 flex flex-row justify-between align-middle">
+    <div class="align-middle text-xl">
+      <RouterLink to="/"> 🧠 Memory Game </RouterLink>
+      <span class="text-xs" v-if="authStore.currentUser">&nbsp;&nbsp;&nbsp;({{ authStore.currentUser?.name }})
+      </span>
+    </div>
     <NavigationMenu>
-      <NavigationMenuList>
+      <NavigationMenuList class="justify-around gap-20">
         <NavigationMenuItem>
-          <NavigationMenuLink as-child :active="$route.name === 'home'">
-            <RouterLink to="/">Home</RouterLink>
-          </NavigationMenuLink>
+          <NavigationMenuTrigger>Games</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <li>
+              <NavigationMenuLink as-child>
+                <RouterLink to="/games/singleplayer">SinglePlayer</RouterLink>
+              </NavigationMenuLink>
+              <NavigationMenuLink as-child>
+                <RouterLink to="/">MultiPlayer</RouterLink>
+              </NavigationMenuLink>
+            </li>
+          </NavigationMenuContent>
         </NavigationMenuItem>
-        
         <NavigationMenuItem>
-          <NavigationMenuLink as-child :active="$route.name === 'singleplayer'">
-            <RouterLink to="/games/singleplayer">Single Player</RouterLink>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-
-        <NavigationMenuItem>
-          <NavigationMenuLink as-child :active="$route.name === 'about'">
+          <NavigationMenuLink>
             <RouterLink to="/about">About</RouterLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        <NavigationMenuItem v-if="!authStore.isLoggedIn">
+          <NavigationMenuLink>
+            <RouterLink to="/login">Login</RouterLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        <NavigationMenuItem v-else>
+          <NavigationMenuLink>
+            <a @click.prevent="logout">Logout</a>
           </NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
-
-    <main class="mt-6">
-      <RouterView /> 
+  </nav>
+  <div>
+    <main>
+      <RouterView />
     </main>
   </div>
 </template>
 
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu'
+import { Toaster } from '@/components/ui/sonner'
+import { toast } from 'vue-sonner'
+import 'vue-sonner/style.css'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+const logout = () => {
+  toast.promise(authStore.logout(), {
+    loading: 'Calling API',
+    success: () => {
+      // redirect to home after successful logout
+      router.push({ path: '/' })
+      return 'Logout Successful '
+    },
+    error: (data) => `[API] Error logging out - ${data?.response?.data?.message}`,
+  })
+}
 </script>
+
+<style></style>

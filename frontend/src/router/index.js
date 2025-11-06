@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/pages/home/HomePage.vue'
 import SingleplayerGamePage from '@/pages/game/SinglePlayerGamePage.vue'
 import AboutPage from '@/pages/about/AboutPage.vue' // (Implícito)
+import LoginPage from '@/pages/login/LoginPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,12 @@ const router = createRouter({
       path: '/about',
       name: 'about',
       component: AboutPage,
+    }
+    ,
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginPage,
     }
   ]
 })
