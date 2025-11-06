@@ -7,7 +7,7 @@
       </CardHeader>
       <CardContent>
         <div class="space-y-4">
-          <p>Choose Difficulty</p>
+          <p class="font-semibold text-lg">Choose Difficulty</p>
           
           <div class="flex gap-2">
             <Button
@@ -23,11 +23,31 @@
             </Button>
           </div>
           
-          <p>High Scores (local)</p>
+          <!-- NOVO: Secção de High Score (Passos 23, 26) -->
+          <p class="font-semibold text-lg pt-4">🏆 Best Times ({{ selectedDifficulty.toUpperCase() }})</p>
+          <div class="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 min-h-[100px]">
+            <ul v-if="gameStore.top3Scores.length" class="space-y-1">
+              <li 
+                v-for="(score, index) in gameStore.top3Scores" 
+                :key="score.date" 
+                class="flex justify-between items-center text-sm"
+              >
+                <span :class="{'font-extrabold text-blue-600 dark:text-blue-400': index === 0}">
+                  #{{ index + 1 }}
+                </span>
+                <span class="font-mono">{{ score.time.toFixed(3) }} s</span>
+              </li>
+            </ul>
+            <p v-else class="text-gray-500 text-sm text-center pt-4">
+              Play a game on this difficulty to set a record!
+            </p>
+          </div>
+          <!-- Fim da NOVO Secção de High Score -->
+
         </div>
       </CardContent>
       <CardFooter>
-        <Button @click="startGame">Start Game</Button>
+        <Button @click="startGame" class="w-full">Start Game</Button>
       </CardFooter>
     </Card>
 
@@ -44,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue' // Adicionar 'watch'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
@@ -55,20 +75,29 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-// Importar a store
 import { useGameStore } from '@/stores/game';
 
 const router = useRouter()
 const gameStore = useGameStore()
 
 // 12.1: Variável reativa local
-const selectedDifficulty = ref('medium')
+const selectedDifficulty = ref(gameStore.difficulty) // Inicializa com a dificuldade atual da store
+
+// NOVO: Quando a dificuldade local muda, atualizamos a store (e o top3Scores irá reagir)
+watch(selectedDifficulty, (newDifficulty) => {
+    // Isso garante que o topo3Scores no template se atualiza imediatamente quando muda a dificuldade
+    gameStore.difficulty = newDifficulty; 
+});
 
 // 12.3: Novo método startGame
 const startGame = () => {
-  // 12.3.1: Definir a dificuldade na store
+  // 12.3.1: A store já tem a dificuldade correta graças ao 'watch' acima, mas definimos
+  // novamente por segurança e clareza.
   gameStore.difficulty = selectedDifficulty.value
   // 12.3.2: Navegar para a página do jogo
   router.push({ name: 'singleplayer' })
 }
+
+// Inicializar a store com a dificuldade selecionada para que o top3Scores seja logo preenchido
+gameStore.difficulty = selectedDifficulty.value
 </script>
