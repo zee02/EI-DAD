@@ -14,7 +14,7 @@
               <Avatar class="w-32 h-32">
                 <AvatarImage
                   v-if="authStore.currentUser.photo_url"
-                  :src="authStore.currentUser.photo_url"
+                  :src="`${serverBaseURL}/storage/photos/${authStore.currentUser.photo_url}`"
                   :alt="authStore.currentUser.name"
                 />
                 <AvatarFallback class="text-4xl">
