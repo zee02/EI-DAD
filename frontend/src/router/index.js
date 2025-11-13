@@ -1,9 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// Importar os componentes das páginas
+
+import AboutPage from '@/pages/about/AboutPage.vue'
 import HomePage from '@/pages/home/HomePage.vue'
-import SingleplayerGamePage from '@/pages/game/SinglePlayerGamePage.vue'
-import AboutPage from '@/pages/about/AboutPage.vue' // (Implícito)
+import SinglePlayerGamePage from '@/pages/game/SinglePlayerGamePage.vue'
 import LoginPage from '@/pages/login/LoginPage.vue'
+import ProfilePage from '@/pages/profile/ProfilePage.vue'
+import ThemesListPage from '@/pages/themes/ThemesListPage.vue'
+import ThemeEditorPage from '@/pages/themes/ThemeEditorPage.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,27 +19,59 @@ const router = createRouter({
     },
     {
       path: '/games',
-      // Rota sem componente, apenas para agrupar
       children: [
         {
           path: 'singleplayer',
           name: 'singleplayer',
-          component: SingleplayerGamePage,
+          component: SinglePlayerGamePage,
         },
-      ]
+      ],
     },
     {
       path: '/about',
       name: 'about',
       component: AboutPage,
-    }
-    ,
+    },
     {
       path: '/login',
       name: 'login',
       component: LoginPage,
-    }
-  ]
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfilePage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/themes',
+      name: 'themes',
+      component: ThemesListPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/themes/create',
+      name: 'themes-create',
+      component: ThemeEditorPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/themes/edit/:id',
+      name: 'themes-edit',
+      component: ThemeEditorPage,
+      meta: { requiresAuth: true },
+    },
+  ],
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+    next({ name: 'login' })
+  } else {
+    next()
+  }
 })
 
 export default router

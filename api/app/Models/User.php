@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany; // <-- Novo import
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -23,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'photo_url', 
     ];
 
     /**
@@ -34,6 +36,29 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    // Passo 9.2: Relacionamentos
+    public function gamesAsPlayer1(): HasMany
+    {
+        return $this->hasMany(Game::class, 'player1_id');
+    }
+
+    public function gamesAsPlayer2(): HasMany
+    {
+        return $this->hasMany(Game::class, 'player2_id');
+    }
+
+    public function gamesWon(): HasMany
+    {
+        return $this->hasMany(Game::class, 'winner_id');
+    }
+    
+    // Passo 10: Método de Conveniência
+    public function gamesQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return Game::where('player1_id', $this->id)
+            ->orWhere('player2_id', $this->id);
+    }
 
     /**
      * Get the attributes that should be cast.
