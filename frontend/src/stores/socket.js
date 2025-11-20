@@ -69,5 +69,6 @@ export const useSocketStore = defineStore('socket', () => {
     emitGetGames, 
     emitJoinGame, 
     emitFlipCard, 
+    joined, // <-- AGORA O ESTADO É EXPOSTO!
   }
 })

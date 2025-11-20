@@ -8,6 +8,7 @@
         <CardDescription>Choose a difficulty and invite a friend!</CardDescription>
       </CardHeader>
       <CardContent class="space-y-4">
+        
         <div class="flex gap-2 justify-center">
           <Button
             v-for="level in gameStore.difficulties"
@@ -21,11 +22,12 @@
             <span class="text-xs opacity-70">{{ level.description }}</span>
           </Button>
         </div>
+        
       </CardContent>
       <CardFooter class="flex justify-center">
-        <Button
-          @click="createNewGame"
-          :disabled="!authStore.isLoggedIn || !socketStore.joined"
+        <Button 
+          @click="createNewGame" 
+          :disabled="!authStore.isLoggedIn || !joined" 
           class="w-full max-w-sm"
         >
           Create Game
@@ -77,11 +79,10 @@
           </div>
 
           <Button
-            @click="createNewGame"
-            :disabled="!authStore.isLoggedIn || !joined"
-            class="w-full max-w-sm"
+            @click="joinGame(game)"
+            :disabled="game.player2 !== null || game.started"
           >
-            Create Game
+            Join Game
           </Button>
         </CardContent>
       </Card>
@@ -93,7 +94,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia' // <-- ESSENCIAL para desestruturação
+import { storeToRefs } from 'pinia'
 import { useGameStore } from '@/stores/game'
 import { useSocketStore } from '@/stores/socket'
 import { useAuthStore } from '@/stores/auth'
@@ -111,11 +112,12 @@ const router = useRouter()
 const authStore = useAuthStore()
 const gameStore = useGameStore()
 const socketStore = useSocketStore()
-const { joined } = storeToRefs(socketStore)
 
-// --- CORREÇÃO DO ERRO: Desestruturar propriedades da store ---
-// Isto torna myGames e availableGames acessíveis diretamente no template
+// --- EXPOSIÇÃO DO ESTADO REATIVO (Obrigatorio para o template) ---
+// Propriedades do Lobby da Game Store
 const { myGames, availableGames } = storeToRefs(gameStore)
+// Estado de Conexão da Socket Store (para desativar o botão 'Create Game')
+const { joined } = storeToRefs(socketStore)
 
 const selectedDifficulty = ref('medium')
 
@@ -126,7 +128,7 @@ const createNewGame = () => {
 
 // Entra num jogo existente (Passo 29)
 const joinGame = (game) => {
-  socketStore.emitJoinGame(game) // Avisa o servidor que o jogador se juntou
+  socketStore.emitJoinGame(game) // Avisa o servidor para atribuir o Player 2
   startGame(game) // Redireciona o utilizador para a página do jogo
 }
 
@@ -142,7 +144,7 @@ const cancelGame = (gameID) => {
 }
 
 onMounted(() => {
-  // Pede a lista de jogos ao carregar a página
+  // Pede a lista de jogos ao carregar a página (Passo 20.4)
   socketStore.emitGetGames()
 })
 </script>
