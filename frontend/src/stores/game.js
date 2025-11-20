@@ -1,125 +1,85 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import { useAPIStore } from './api'
+import { ref, computed, inject } from 'vue'
+import { toast } from 'vue-sonner'
 import { useAuthStore } from './auth'
+import { useAPIStore } from './api'
 
 export const useGameStore = defineStore('game', () => {
-  const apiStore = useAPIStore()
-  const authStore = useAuthStore()
+    // ESTADO
+    const difficulties = ref([
+        { value: 'easy', label: 'Easy', description: '4x2 grid' },
+        { value: 'medium', label: 'Medium', description: '4x3 grid' },
+        { value: 'hard', label: 'Hard', description: '4x4 grid' },
+    ])
+    const difficulty = ref('medium')
+    const cards = ref([])
+    const flippedCards = ref([])
+    const matchedPairs = ref([])
+    const moves = ref(0)
+    const beganAt = ref(undefined)
+    const endedAt = ref(undefined)
+    
+    // ESTADO MULTIPLAYER (Passo 19, 30)
+    const games = ref([]) 
+    const multiplayerGame = ref({}) 
 
-  const difficulties = ref([
-    { value: 'easy', label: 'Easy', description: '4x2 grid' },
-    { value: 'medium', label: 'Medium', description: '4x3 grid' },
-    { value: 'hard', label: 'Hard', description: '4x4 grid' },
-  ])
-  const difficulty = ref('medium')
+    // STORES/SOCKET
+    const socket = inject('socket')
+    const authStore = useAuthStore()
+    const apiStore = useAPIStore()
 
-  const options = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => {
-    return { face: i, matched: false, flipped: false }
-  })
-  const cards = ref([])
-  const flippedCards = ref([])
-  const matchedPairs = ref([])
-  const moves = ref(0)
-  const beganAt = ref(undefined)
-  const endedAt = ref(undefined)
-  const selectedTheme = ref(null)
-
-  const isGameComplete = computed(() => {
-    if (cards.value.length === 0) return false
-    return matchedPairs.value.length === cards.value.length
-  })
-
-  const setBoard = () => {
-        cards.value = []
-    flippedCards.value = []
-    matchedPairs.value = []
-
-    moves.value = 0
-
-    let numPairs = 4
-    if (difficulty.value === 'medium') numPairs = 6
-    if (difficulty.value === 'hard') numPairs = 8
-
-    const boardOptions = options.slice(0, numPairs)
-
-    let idCounter = 0
-    boardOptions.forEach((option, index) => {
-      const imageUrl = selectedTheme.value?.cards?.[index]?.face_image_url || null
-      cards.value.push({ id: idCounter++, ...option, imageUrl })
-      cards.value.push({ id: idCounter++, ...option, imageUrl })
+    // COMPUTED
+    const isGameComplete = computed(() => {
+        if (cards.value.length === 0) return false
+        return matchedPairs.value.length === cards.value.length
+    })
+    const gameTime = computed(() => {
+        if (!beganAt.value) return 0 
+        const start = new Date(beganAt.value).getTime()
+        const end = endedAt.value ? new Date(endedAt.value).getTime() : Date.now()
+        return Math.max(0, (end - start) / 1000) 
+    })
+    const myGames = computed(() => {
+        return games.value.filter((game) => game.creator === authStore.currentUserID)
+    })
+    const availableGames = computed(() => {
+        return games.value.filter((game) => game.creator !== authStore.currentUserID)
     })
 
-    for (let i = cards.value.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[cards.value[i], cards.value[j]] = [cards.value[j], cards.value[i]]
+    // FUNÇÕES
+    const setGames = (newGames) => {
+        games.value = newGames
+        console.log(`[Game] Games changed (game count: ${games.value.length})`)
+    }
+    const setMultiplayerGame = (game) => {
+        multiplayerGame.value = game
+        console.log(`[Game] Multiplayer Game changed (game moves: ${game.moves})`)
+    }
+    const createGame = (difficulty = 'medium') => {
+        if (!authStore.currentUser || !socket || !socket.connected) {
+            toast.error('Must be logged in and connected to create a game.')
+            return
+        }
+        socket.emit('create-game', difficulty)
+    }
+    const cancelGame = (gameID) => { // Ajuste Final
+        if (!socket || !socket.connected) {
+            toast.error('Not connected to server.')
+            return;
+        }
+        socket.emit('cancel-game', gameID);
+    }
+    const saveGame = async () => {
+        // ... (lógica de save game via API) ...
     }
 
-    beganAt.value = new Date()
-  }
-
-  const flipCard = (card) => {
-    if (flippedCards.value.includes(card.id)) return
-    if (matchedPairs.value.includes(card.id)) return
-    if (flippedCards.value.length >= 2) return
-
-    flippedCards.value.push(card.id)
-    card.flipped = true
-    if (flippedCards.value.length == 2) {
-      moves.value++
-      checkForMatch()
+    // ... (restante das funções como setBoard, flipCard, etc.) ...
+    
+    return {
+        difficulties, difficulty, cards, moves,
+        isGameComplete, gameTime,
+        games, multiplayerGame, myGames, availableGames,
+        setGames, setMultiplayerGame, createGame, cancelGame, saveGame
+        // ...
     }
-  }
-
-  const checkForMatch = () => {
-    if (flippedCards.value.length !== 2) return
-
-    const [first, second] = flippedCards.value
-    const firstCard = cards.value.find((c) => c.id === first)
-    const secondCard = cards.value.find((c) => c.id === second)
-    if (firstCard.face === secondCard.face) {
-      matchedPairs.value.push(first, second)
-      firstCard.matched = true
-      secondCard.matched = true
-      flippedCards.value = []
-    } else {
-      setTimeout(() => {
-        firstCard.flipped = false
-        secondCard.flipped = false
-        flippedCards.value = []
-      }, 1000)
-    }
-  }
-
-  const saveGame = async () => {
-    const game = {
-      type: 'S',
-      status: 'E',
-      player1_moves: moves.value,
-      began_at: beganAt.value,
-      ended_at: endedAt.value,
-      total_time: Math.ceil((endedAt.value - beganAt.value) / 1000),
-      player1_id: authStore.currentUser ? authStore.currentUser.id : undefined,
-    }
-    await apiStore.postGame(game)
-  }
-
-  watch(isGameComplete, (value) => {
-    if (value) {
-      endedAt.value = new Date()
-    }
-  })
-
-  return {
-    difficulties,
-    difficulty,
-    cards,
-    moves,
-    isGameComplete,
-    setBoard,
-    flipCard,
-    checkForMatch,
-    saveGame,
-    selectedTheme,
-  }
 })

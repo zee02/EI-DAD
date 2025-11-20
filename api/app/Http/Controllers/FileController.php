@@ -1,15 +1,12 @@
 <?php
 
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
-
+use App\Http\Controllers\Controller;
 
 class FileController extends Controller
 {
-    // Upload de uma única foto de utilizador
     public function uploadUserPhoto(Request $request)
     {
         $request->validate([
@@ -17,14 +14,13 @@ class FileController extends Controller
         ]);
 
         $file = $request->file('photo');
-        $path = $file->store('photos', 'public'); // Guarda em storage/app/public/photos
+        $path = $file->store('photos', 'public'); 
 
         return response()->json([
-            'photo_url' => '/storage/' . $path, // Retorna URL acessível publicamente
+            'photo_url' => '/storage/' . $path, 
         ], 200);
     }
 
-    // Upload de múltiplos ficheiros (Card Faces)
     public function uploadCardFaces(Request $request)
     {
         $request->validate([
@@ -34,13 +30,12 @@ class FileController extends Controller
 
         $uploadedFiles = [];
         
-        // Tratar caso de ficheiro único vs array
         $files = is_array($request->file('cardfaces')) 
             ? $request->file('cardfaces') 
             : [$request->file('cardfaces')];
         
         foreach ($files as $file) {
-            $path = $file->store('cardfaces', 'public'); // Guarda em storage/app/public/cardfaces
+            $path = $file->store('cardfaces', 'public');
             $uploadedFiles[] = [
                 'cardface_url' => '/storage/' . $path,
             ];

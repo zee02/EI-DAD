@@ -25,7 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Rota de Logout
-    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Rotas de Upload de Ficheiros
     Route::prefix('files')->group(function () {
@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'board-themes' => BoardThemeController::class,
     ]);
     
-    // Rota Específica para Atualizar photo_url (Passo 33.1)
+    // Rota Específica para Atualizar photo_url (PATCH)
     Route::patch('/users/{user}/photo-url', [UserController::class, 'patchPhotoURL']);
 });
 
